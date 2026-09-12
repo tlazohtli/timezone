@@ -1,6 +1,6 @@
-# Xihuitl Discord Bot
+# Timezone Discord Bot
 
-A Discord bot with timezone management and virtual pet game features.
+A Discord bot for coordinating across timezones.
 
 ## Features
 
@@ -11,22 +11,6 @@ Help your Discord community coordinate across timezones:
 - **`/time get location`** - Check current time in any location
 - **`/time all`** - View everyone's local times grouped by timezone
 - **Auto-mention replies** - Bot automatically responds with time when users are mentioned (2-hour cooldown)
-
-### 🐾 Pet System
-Adopt and care for virtual pets:
-- **`/pet adopt`** - Interactive pet adoption with species browsing
-- **`/pet info`** - View your pet's status, hunger level, and age
-- **`/pet feed`** - Feed your pet to restore hunger (autocomplete search)
-- **`/pet rename`** - Give your pet a new name
-- **`/pet bag`** - Manage your inventory (50 item capacity)
-- **`/pet storage`** - Access unlimited storage space
-- **`/pet daily`** - Claim daily food rewards (20-hour cooldown)
-
-**Pet Features:**
-- 6 unique species with different types (beast, plant, insect, construct)
-- Hunger system that decays over time
-- Item system with food and inventory management
-- Daily reward system with cooldowns
 
 ## Quick Start
 
@@ -87,20 +71,15 @@ npm run cdk:destroy     # Destroy stack
 ## Project Structure
 
 ```
-Xihuitl/
+timezone/
 ├── src/
-│   ├── pet/
-│   │   ├── commands/         # Pet slash command handlers
-│   │   ├── services/         # Pet, inventory, daily reward services
-│   │   └── constants/        # Pet species and item definitions
 │   ├── time/
 │   │   ├── commands/         # Time slash command handlers
 │   │   └── services/         # Timezone and geocoding services
-│   ├── services/             # Shared AWS services (DynamoDB, S3)
+│   ├── services/             # Shared AWS services
 │   └── index.ts              # Bot entry point
 ├── infra/
-│   └── lib/xiuh-stack.ts     # AWS CDK infrastructure definition
-├── assets/                   # Pet species images (deployed to S3)
+│   └── lib/timezone-stack.ts # AWS CDK infrastructure definition
 ├── dist/                     # Compiled JavaScript (gitignored)
 └── CDK_SETUP.md              # Infrastructure deployment guide
 ```
@@ -110,11 +89,8 @@ Xihuitl/
 The bot runs on AWS with a cost-optimized setup:
 
 - **EC2 t4g.micro** (ARM64 Graviton) - Runs the bot 24/7
-- **DynamoDB** (on-demand) - Two tables:
-  - `xiuh-time` - User timezone preferences (simple key-value)
-  - `xiuh-pets` - Pet system (single-table design with PK/SK)
-- **S3 Bucket** - Pet species images (private, presigned URLs)
-- **IAM Role** - Scoped permissions for DynamoDB read/write and S3 read
+- **DynamoDB** (on-demand) - `xiuh-time` stores user timezone preferences
+- **IAM Role** - Scoped permissions for DynamoDB read/write
 - **Security Group** - SSH access for deployment
 
 **Cost**: Free for first 12 months, then ~$6-8/month
@@ -145,9 +121,6 @@ sudo systemctl restart xiuh-bot
 # List DynamoDB tables
 aws dynamodb list-tables
 
-# View S3 bucket contents
-aws s3 ls s3://xiuh-pet-images/
-
 # Check CloudFormation stack
 aws cloudformation describe-stacks --stack-name XiuhStack
 ```
@@ -156,6 +129,6 @@ aws cloudformation describe-stacks --stack-name XiuhStack
 
 - **Runtime**: Node.js with TypeScript
 - **Framework**: Discord.js v14 (optimized caching)
-- **Cloud**: AWS (EC2, DynamoDB, S3)
+- **Cloud**: AWS (EC2 and DynamoDB)
 - **Infrastructure**: AWS CDK
 - **APIs**: Google Geocoding & Timezone APIs (optional)

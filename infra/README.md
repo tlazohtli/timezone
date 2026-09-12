@@ -1,6 +1,6 @@
 # Infrastructure (AWS CDK)
 
-This directory contains the AWS CDK infrastructure code for the Xihuitl Discord bot.
+This directory contains the AWS CDK infrastructure code for the Timezone Discord bot.
 
 ## Structure
 
@@ -9,17 +9,17 @@ infra/
 ├── bin/
 │   └── infra.ts          # CDK app entry point
 ├── lib/
-│   └── xiuh-stack.ts     # Stack definition with all resources
+│   └── timezone-stack.ts # Stack definition with all resources
 ├── tsconfig.json         # TypeScript config for CDK code
 └── README.md             # This file
 ```
 
 ## What's Provisioned
 
-The CDK stack (`XiuhStack`) provisions:
+The CDK stack (`TimezoneStack`) provisions:
 
 - **EC2 Instance** (t3.micro) - Runs the Discord bot
-- **DynamoDB Table** (`xiuh-user-timezones`) - Stores user timezone preferences
+- **DynamoDB Table** (`xiuh-time`) - Stores user timezone preferences
 - **IAM Role** (`xiuh-bot-role`) - EC2 instance permissions
 - **Security Group** (`xiuh-bot-sg`) - SSH access for deployment
 - **SSM Parameters** - Configuration management

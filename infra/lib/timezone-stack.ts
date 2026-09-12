@@ -4,20 +4,18 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 
 /**
- * Xihuitl Discord Bot Stack
+ * Timezone Discord Bot Stack
  * 
- * This stack provisions all infrastructure for the Xihuitl Discord timezone bot:
+ * This stack provisions all infrastructure for the Timezone Discord bot:
  * - EC2 instance (t3.micro) for running the bot
  * - DynamoDB table for storing user timezone preferences
  * - IAM roles for EC2 with appropriate permissions
  * - Security groups for SSH access
  * - SSM parameters for configuration management
  */
-export class XiuhStack extends cdk.Stack {
+export class TimezoneStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -35,42 +33,6 @@ export class XiuhStack extends cdk.Stack {
       pointInTimeRecoverySpecification: {
         pointInTimeRecoveryEnabled: false, // Disable to stay within free tier
       },
-    });
-
-    // ========================================
-    // DynamoDB Table for Pets
-    // ========================================
-    const petsTable = new dynamodb.Table(this, 'PetsTable', {
-      tableName: 'xiuh-pets',
-      partitionKey: {
-        name: 'PK',
-        type: dynamodb.AttributeType.STRING,
-      },
-      sortKey: {
-        name: 'SK',
-        type: dynamodb.AttributeType.STRING,
-      },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-      pointInTimeRecoverySpecification: {
-        pointInTimeRecoveryEnabled: false,
-      },
-    });
-
-    // ========================================
-    // S3 Bucket for Pet Images
-    // ========================================
-    const petImagesBucket = new s3.Bucket(this, 'PetImagesBucket', {
-      bucketName: `xiuh-pet-images`,
-      publicReadAccess: false,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-      autoDeleteObjects: false,
-      lifecycleRules: [{
-        transitions: [{
-          storageClass: s3.StorageClass.INTELLIGENT_TIERING,
-          transitionAfter: cdk.Duration.days(0),  // Immediate
-        }],    
-      }]
     });
 
     // ========================================
@@ -111,7 +73,7 @@ export class XiuhStack extends cdk.Stack {
     const botSecurityGroup = new ec2.SecurityGroup(this, 'BotSecurityGroup', {
       vpc,
       securityGroupName: 'xiuh-bot-sg',
-      description: 'Security group for Xihuitl Discord bot EC2 instance',
+      description: 'Security group for Timezone Discord bot EC2 instance',
       allowAllOutbound: true,
     });
 
@@ -127,7 +89,7 @@ export class XiuhStack extends cdk.Stack {
     const botRole = new iam.Role(this, 'BotRole', {
       roleName: 'xiuh-bot-role',
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
-      description: 'IAM role for Xihuitl Discord bot EC2 instance',
+      description: 'IAM role for Timezone Discord bot EC2 instance',
       managedPolicies: [
         // SSM Session Manager (optional, for SSH alternative)
         iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'),
@@ -136,10 +98,6 @@ export class XiuhStack extends cdk.Stack {
 
     // Grant DynamoDB permissions
     timezoneTable.grantReadWriteData(botRole);
-    petsTable.grantReadWriteData(botRole);
-
-    // Grant S3 read permissions for pet images
-    petImagesBucket.grantRead(botRole);
 
     // Grant SSM Parameter Store read permissions
     botRole.addToPolicy(
@@ -188,7 +146,7 @@ export class XiuhStack extends cdk.Stack {
       '# Create systemd service file',
       'cat > /etc/systemd/system/xiuh-bot.service <<EOF',
       '[Unit]',
-      'Description=Xihuitl Discord Timezone Bot',
+      'Description=Timezone Discord Bot',
       'After=network.target',
       '',
       '[Service]',
@@ -239,15 +197,6 @@ export class XiuhStack extends cdk.Stack {
     });
 
     // ========================================
-    // S3 Bucket Deployment
-    // ========================================
-    new s3deploy.BucketDeployment(this, 'DeployPetImages', {
-      destinationBucket: petImagesBucket, 
-      sources: [s3deploy.Source.asset('./assets')],
-      prune: true, 
-    });
-
-    // ========================================
     // Stack Outputs
     // ========================================
     new cdk.CfnOutput(this, 'InstanceId', {
@@ -272,18 +221,6 @@ export class XiuhStack extends cdk.Stack {
       value: timezoneTable.tableName,
       description: 'DynamoDB Table Name for timezones',
       exportName: 'XiuhUserTimezonesTable',
-    });
-
-    new cdk.CfnOutput(this, 'PetsTableName', {
-      value: petsTable.tableName,
-      description: 'DynamoDB Table Name for pets',
-      exportName: 'XiuhPetsTable',
-    });
-
-    new cdk.CfnOutput(this, 'PetImagesBucketName', {
-      value: petImagesBucket.bucketName,
-      description: 'S3 Bucket Name for pet images',
-      exportName: 'XiuhPetImagesBucket',
     });
 
     new cdk.CfnOutput(this, 'BotRoleArn', {

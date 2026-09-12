@@ -1,7 +1,6 @@
 import { REST, Routes } from 'discord.js';
 import * as dotenv from 'dotenv';
 import { timeCommand } from '../time/commands/time';
-import { petCommand } from '../pet/commands/commands';
 
 dotenv.config();
 
@@ -9,8 +8,7 @@ const TOKEN = process.env.DISCORD_TOKEN!;
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
 
 const commands = [
-    timeCommand.data.toJSON(),
-    petCommand.data.toJSON()
+    timeCommand.data.toJSON()
 ];
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);

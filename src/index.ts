@@ -2,8 +2,6 @@ import { Client, GatewayIntentBits, Collection, Options } from 'discord.js';
 import * as dotenv from 'dotenv';
 import { Command } from './types';
 import { timeCommand, handleTimeMentions } from './time/commands/time';
-import { petCommand } from './pet/commands/commands';
-import { handleFeedAutocomplete } from './pet/commands/feed';
 
 dotenv.config();
 
@@ -61,15 +59,9 @@ const client = new Client({
 
 const commands = new Collection<string, Command>();
 commands.set(timeCommand.data.name, timeCommand);
-commands.set(petCommand.data.name, petCommand);
 
 client.on('interactionCreate', async interaction => {
-    if (interaction.isAutocomplete()) {
-        if (interaction.commandName === 'pet' && interaction.options.getSubcommand() === 'feed') {
-            await handleFeedAutocomplete(interaction);
-        }
-        return;
-    }
+    if (interaction.isAutocomplete()) return;
 
     if (!interaction.isChatInputCommand()) return;
 
