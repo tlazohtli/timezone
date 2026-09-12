@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const geocodeUrlBase = `https://maps.googleapis.com/maps/api/geocode/json?key=${GOOGLE_API_KEY}`;
 const timezoneUrlBase = `https://maps.googleapis.com/maps/api/timezone/json?key=${GOOGLE_API_KEY}`;
@@ -23,6 +21,16 @@ interface GoogleTimezoneResponse {
     status: string;
 }
 
+async function fetchGoogleJson<T>(url: string): Promise<T> {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`Google Maps API request failed with HTTP ${response.status}`);
+    }
+
+    return response.json() as Promise<T>;
+}
+
 /**
  * Sanitize location input to improve matching and prevent abuse
  * Removes special characters, brackets, digits, and normalizes whitespace
@@ -37,7 +45,6 @@ function sanitizeLocation(location: string): string {
 
 /**
  * Get timezone and formatted address for a location using Google Maps API
- * Results are stored in DynamoDB to minimize API calls
  */
 export const getTimezoneFromLocation = async (
     location: string
@@ -61,28 +68,28 @@ export const getTimezoneFromLocation = async (
         // Make API request for geocoding
         console.log(`Making Google Geocoding API request for: ${sanitizedLocation}`);
         const geocodeUrl = `${geocodeUrlBase}&address=${encodeURIComponent(sanitizedLocation)}`;
-        const geocodeResponse = await axios.get<GoogleGeocodeResponse>(geocodeUrl);
+        const geocodeResponse = await fetchGoogleJson<GoogleGeocodeResponse>(geocodeUrl);
 
-        if (!geocodeResponse.data.results || geocodeResponse.data.results.length === 0) {
+        if (!geocodeResponse.results || geocodeResponse.results.length === 0) {
             console.log(`No geocoding results for: ${sanitizedLocation}`);
             return null;
         }
 
-        const geocodeResult = geocodeResponse.data.results[0];
+        const geocodeResult = geocodeResponse.results[0];
         const { lat, lng } = geocodeResult.geometry.location;
         const formattedAddress = geocodeResult.formatted_address;
 
         // Make API request for timezone
         const timestamp = Math.floor(Date.now() / 1000);
         const timezoneUrl = `${timezoneUrlBase}&location=${lat},${lng}&timestamp=${timestamp}`;
-        const timezoneResponse = await axios.get<GoogleTimezoneResponse>(timezoneUrl);
+        const timezoneResponse = await fetchGoogleJson<GoogleTimezoneResponse>(timezoneUrl);
 
-        if (timezoneResponse.data.status !== 'OK') {
-            console.log(`Timezone API failed for ${lat},${lng}: ${timezoneResponse.data.status}`);
+        if (timezoneResponse.status !== 'OK') {
+            console.log(`Timezone API failed for ${lat},${lng}: ${timezoneResponse.status}`);
             return null;
         }
 
-        const timezone = timezoneResponse.data.timeZoneId;
+        const timezone = timezoneResponse.timeZoneId;
 
         return {
             timezone,
@@ -93,4 +100,3 @@ export const getTimezoneFromLocation = async (
         return null;
     }
 };
-

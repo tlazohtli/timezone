@@ -82,29 +82,6 @@ export class LocalTimezoneStore {
         });
     }
 
-    public async countUsers(): Promise<number> {
-        return Object.keys((await this.load()).users).length;
-    }
-
-    public async replaceAll(users: UserTimezone[]): Promise<void> {
-        return this.enqueueWrite(async () => {
-            const nextStore: TimezoneStoreData = {
-                version: 1,
-                users: {},
-            };
-
-            for (const user of users) {
-                nextStore.users[user.user_id] = {
-                    timezone: user.timezone,
-                    display_location: user.display_location,
-                };
-            }
-
-            this.data = nextStore;
-            await this.write(nextStore);
-        });
-    }
-
     private async load(): Promise<TimezoneStoreData> {
         if (this.data) return this.data;
 

@@ -9,14 +9,9 @@
     "dev": "bun --watch src/index.ts",
     "typecheck": "bunx tsc --noEmit",
     "build": "bun run typecheck",
-    "deploy-commands": "bun run src/utils/deploy-commands.ts",
-    "cdk:synth": "cdk synth",
-    "cdk:deploy": "cdk deploy",
-    "cdk:destroy": "cdk destroy",
-    "cdk:diff": "cdk diff"
+    "deploy-commands": "bun run src/utils/deploy-commands.ts"
   },
   "dependencies": {
-    "axios": "^1.6.0",
     "discord.js": "^14.13.0",
     "dotenv": "^16.3.1",
     "luxon": "^3.4.3"
@@ -24,8 +19,6 @@
   "devDependencies": {
     "@types/luxon": "^3.3.2",
     "@types/node": "^20.6.0",
-    "aws-cdk-lib": "^2.100.0",
-    "source-map-support": "^0.5.21",
     "typescript": "^5.2.2"
   }
 }

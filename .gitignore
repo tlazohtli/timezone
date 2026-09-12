@@ -12,10 +12,6 @@ bot-deploy.tar.gz
 # Local application data
 data/
 
-# CDK Infrastructure
-cdk.out/
-cdk.context.json
-
 # System Files
 .DS_Store
 

@@ -14,10 +14,6 @@ Help your Discord community coordinate across timezones:
 
 ## Quick Start
 
-### For New Deployments
-
-See **[CDK_SETUP.md](CDK_SETUP.md)** for complete infrastructure deployment guide.
-
 ### For Development
 
 ```bash
@@ -46,13 +42,7 @@ make docker.down        # Stop the bot container
 make docker.logs        # Follow bot logs
 make clean              # Remove legacy compiled files
 
-make deploy.commands    # Register slash commands with Discord
-
-# Infrastructure (AWS CDK)
-make infra.synth        # Generate CloudFormation template
-make infra.deploy       # Deploy infrastructure to AWS
-make infra.diff         # Preview infrastructure changes
-make infra.destroy      # Destroy infrastructure (with safety delay)
+make deploy.commands    # Register slash commands with Discord in a one-off container
 ```
 
 ### Bun Scripts
@@ -61,12 +51,6 @@ make infra.destroy      # Destroy infrastructure (with safety delay)
 bun run build           # Type-check TypeScript
 bun run dev             # Run the bot with Bun and reload on changes
 bun run start           # Run the bot with Bun
-
-# CDK commands
-bun run cdk:synth       # Synthesize CloudFormation
-bun run cdk:deploy      # Deploy infrastructure
-bun run cdk:diff        # Show changes
-bun run cdk:destroy     # Destroy stack
 ```
 
 ## Project Structure
@@ -78,28 +62,22 @@ timezone/
 │   │   ├── commands/         # Time slash command handlers
 │   │   └── services/         # Timezone and geocoding services
 │   └── index.ts              # Bot entry point
-├── infra/
-│   └── lib/timezone-stack.ts # AWS CDK infrastructure definition
-├── dist/                     # Compiled JavaScript (gitignored)
-└── CDK_SETUP.md              # Infrastructure deployment guide
+├── Dockerfile                # Bun runtime container image
+├── compose.yaml              # Raspberry Pi service definition
+└── data/                     # Local timezone data (gitignored)
 ```
 
-## Infrastructure Overview
+## Deployment overview
 
-The bot runs on AWS with a cost-optimized setup:
+The bot runs as an ARM64 Bun container on the Raspberry Pi:
 
-- **EC2 t4g.micro** (ARM64 Graviton) - Runs the bot 24/7
-- **DynamoDB** (on-demand) - `xiuh-time` stores user timezone preferences
-- **IAM Role** - Scoped permissions for DynamoDB read/write
-- **Security Group** - SSH access for deployment
+- **Docker Compose** keeps the runtime and dependencies isolated.
+- **Local JSON** stores user timezone preferences on the Pi's persistent storage.
+- **Host-only environment file** supplies Discord and Google API credentials.
 
-**Cost**: Free for first 12 months, then ~$6-8/month
+## Timezone data
 
-See [CDK_SETUP.md](CDK_SETUP.md) for detailed infrastructure setup and deployment.
-
-## Migrating timezone data off AWS
-
-Timezone preferences are stored locally in `data/timezones.json` by default. Before retiring DynamoDB, manually export the records from `xiuh-time` and create the local file in this format:
+Timezone preferences are stored locally in `data/timezones.json` by default, using this format:
 
 ```json
 {
@@ -117,7 +95,7 @@ Set `TIMEZONE_DATA_FILE` to an absolute path such as `/var/lib/timezone/timezone
 
 ## Runtime configuration
 
-Copy `.env.example` to `.env` and provide the required values. `DISCORD_TOKEN` is required to run the bot; `GOOGLE_API_KEY` is required for `/time set location`; and `DISCORD_CLIENT_ID` is required only when registering slash commands. `PUBLIC_KEY` is retained from the previous deployment but is not used by this Gateway-based bot. Never commit `.env`.
+Copy `.env.example` to `.env` and provide the required values. `DISCORD_TOKEN` is required to run the bot; `GOOGLE_API_KEY` is required for `/time set location`; and `DISCORD_CLIENT_ID` is required only when registering slash commands. Never commit `.env`.
 
 ## Raspberry Pi Docker deployment
 
@@ -143,33 +121,20 @@ TIMEZONE_ENV_FILE=.env TIMEZONE_DATA_DIR=./data docker compose up --build
 ### Check Bot Status
 
 ```bash
-# SSH into EC2 instance
-ssh -i ~/.ssh/xiuh-bot-key.pem ec2-user@YOUR_EC2_IP
+# View live container logs
+make docker.logs
 
-# Check service status
-sudo systemctl status xiuh-bot
+# Restart after a configuration or image change
+make deploy
 
-# View live logs
-sudo journalctl -u xiuh-bot -f
-
-# Restart bot
-sudo systemctl restart xiuh-bot
-```
-
-### Check AWS Resources
-
-```bash
-# List DynamoDB tables
-aws dynamodb list-tables
-
-# Check CloudFormation stack
-aws cloudformation describe-stacks --stack-name XiuhStack
+# Stop the bot
+make docker.down
 ```
 
 ## Technology Stack
 
-- **Runtime**: Node.js with TypeScript
+- **Runtime**: Bun with TypeScript
 - **Framework**: Discord.js v14 (optimized caching)
-- **Cloud**: AWS (EC2 and DynamoDB)
-- **Infrastructure**: AWS CDK
+- **Deployment**: Docker Compose on Raspberry Pi
+- **Storage**: Local JSON on persistent host storage
 - **APIs**: Google Geocoding & Timezone APIs (optional)
