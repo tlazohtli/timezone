@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+data/
+node_modules/
+dist/
+cdk.out/
+*.pem
+bot-deploy.tar.gz
+Dockerfile*
+compose*.yaml
+README.md
+CDK_SETUP.md
+infra/

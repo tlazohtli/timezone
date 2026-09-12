@@ -4,65 +4,51 @@ include .env
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' .env)
 endif
 
-EC2_USER ?= ec2-user
-REMOTE_DIR ?= /home/ec2-user/xiuh-bot
+.PHONY: all clean build docker.build docker.up docker.down docker.logs deploy deploy.commands infra.synth infra.deploy infra.diff infra.destroy
 
-ifndef EC2_HOST
-$(error EC2_HOST is not set. Add it to your .env (e.g. EC2_HOST=3.16.x.x))
-endif
+all: docker.up
 
-ifndef SSH_KEY
-$(error SSH_KEY is not set. Add it to your .env (e.g. SSH_KEY=./my-key.pem))
-endif
-
-.PHONY: all clean build package deploy deploy.commands dev dev.ec2.stop dev.ec2.start infra.synth infra.deploy infra.diff infra.destroy
-
-all: deploy
-
-# --- BOT APPLICATION ---
+# --- BOT CONTAINER ---
 
 clean:
 	rm -rf dist
-	rm -f bot-deploy.tar.gz
 
-build: clean
-	npm install
-	npx tsc
+build: docker.build
 
-package: build
-	tar -czf bot-deploy.tar.gz dist package.json package-lock.json .env
+docker.build:
+	docker compose build
 
-deploy: package
-	@echo "🚀 Deploying bot to $(EC2_HOST)..."
-	ssh -i $(SSH_KEY) -o StrictHostKeyChecking=no $(EC2_USER)@$(EC2_HOST) "mkdir -p $(REMOTE_DIR)"
-	scp -i $(SSH_KEY) bot-deploy.tar.gz $(EC2_USER)@$(EC2_HOST):$(REMOTE_DIR)
-	ssh -i $(SSH_KEY) $(EC2_USER)@$(EC2_HOST) "cd $(REMOTE_DIR) && \
-		tar --warning=no-unknown-keyword -xzf bot-deploy.tar.gz && \
-		npm ci --omit=dev && \
-		sudo systemctl restart xiuh-bot"
-	@echo "✅ Bot Deployment Complete!"
-	@rm -f bot-deploy.tar.gz
+docker.up:
+	docker compose up -d --build
+
+docker.down:
+	docker compose down
+
+docker.logs:
+	docker compose logs --follow --tail=100
+
+deploy: docker.up
 
 deploy.commands:
 	@echo "📝 Registering Discord slash commands..."
-	npm run deploy-commands
+	bun run deploy-commands
 
 # --- CDK INFRASTRUCTURE ---
 
 infra.synth:
 	@echo "🔍 Synthesizing CDK stack..."
-	npm run cdk:synth
+	bun run cdk:synth
 
 infra.deploy:
 	@echo "🏗️  Deploying infrastructure..."
-	npm run cdk:deploy
+	bun run cdk:deploy
 
 infra.diff:
 	@echo "📊 Showing infrastructure changes..."
-	npm run cdk:diff
+	bun run cdk:diff
 
 infra.destroy:
 	@echo "⚠️  WARNING: This will destroy all infrastructure!"
 	@echo "Press Ctrl+C to cancel, or wait 5 seconds to continue..."
 	@sleep 5
-	npm run cdk:destroy
+	bun run cdk:destroy
