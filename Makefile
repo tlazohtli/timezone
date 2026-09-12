@@ -2,6 +2,12 @@
 ifneq (,$(wildcard ./.env))
 include .env
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' .env)
+
+# A checkout with local secrets keeps its ignored data beside the repository.
+# Hosts without .env continue to use Compose's /etc and /var defaults.
+TIMEZONE_ENV_FILE ?= .env
+TIMEZONE_DATA_DIR ?= ./data
+export TIMEZONE_ENV_FILE TIMEZONE_DATA_DIR
 endif
 
 
