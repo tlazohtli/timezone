@@ -1,6 +1,18 @@
 # Environment & Secrets
 .env
+.env.*
+.envrc
+.npmrc
 *.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.aws/
+.ssh/
+id_rsa
+id_ecdsa
+id_ed25519
 
 # Dependencies
 node_modules/
@@ -8,6 +20,10 @@ node_modules/
 # Build Outputs
 dist/
 bot-deploy.tar.gz
+*.log
+logs/
+coverage/
+*.tsbuildinfo
 
 # Local application data
 data/

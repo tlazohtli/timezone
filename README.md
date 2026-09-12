@@ -35,14 +35,10 @@ make deploy
 ### Makefile Commands
 
 ```bash
-# Container
-make build              # Build the ARM64 Bun image and type-check the source
-make deploy             # Start or update the bot container
-make docker.down        # Stop the bot container
-make docker.logs        # Follow bot logs
-make clean              # Remove legacy compiled files
-
-make deploy.commands    # Register slash commands with Discord in a one-off container
+make deploy             # Build (if needed), then start or update the bot
+make logs               # Follow bot logs
+make stop               # Stop the bot without deleting timezone data
+make commands           # Register Discord slash commands
 ```
 
 ### Bun Scripts
@@ -95,20 +91,21 @@ Set `TIMEZONE_DATA_FILE` to an absolute path such as `/var/lib/timezone/timezone
 
 ## Runtime configuration
 
-Copy `.env.example` to `.env` and provide the required values. `DISCORD_TOKEN` is required to run the bot; `GOOGLE_API_KEY` is required for `/time set location`; and `DISCORD_CLIENT_ID` is required only when registering slash commands. Never commit `.env`.
+Create an ignored `.env` file with the required values. `DISCORD_TOKEN` is required to run the bot; `GOOGLE_API_KEY` is required for `/time set location`; and `DISCORD_CLIENT_ID` is required only when registering slash commands. Never commit `.env`.
 
 ## Raspberry Pi Docker deployment
 
-Install Docker Engine and the Compose plugin on 64-bit Raspberry Pi OS. On the Pi, clone this repository and create the host-only configuration and data directories:
+This project assumes Docker Engine and the `docker compose` plugin are already installed on the Pi. Host-level Docker setup is maintained separately in the `wildberry` project.
+
+Create the application directories and copy the host-only configuration and migrated data:
 
 ```bash
-sudo install -d -m 700 /etc/timezone-bot /var/lib/timezone
-sudo install -m 600 /path/to/env /etc/timezone-bot/env
-sudo install -m 600 /path/to/timezones.json /var/lib/timezone/timezones.json
-sudo chown -R 1000:1000 /var/lib/timezone
+sudo install -d -o "$USER" -g "$USER" -m 700 /etc/timezone-bot /var/lib/timezone
+sudo install -m 600 -o "$USER" -g "$USER" /path/to/env /etc/timezone-bot/env
+sudo install -m 600 -o 1000 -g 1000 /path/to/timezones.json /var/lib/timezone/timezones.json
 ```
 
-`/etc/timezone-bot/env` must contain the same runtime values as `.env`; `/var/lib/timezone/timezones.json` is the migrated local data file. Neither is included in the image. Start the container with `make deploy`, then inspect it with `make docker.logs`.
+`/etc/timezone-bot/env` must contain the runtime values; `/var/lib/timezone/timezones.json` is the migrated local data file. Both paths are host-only and excluded from the image. Start the container with `make deploy`, then inspect it with `make logs`.
 
 For a local Docker run with the repository's ignored configuration and data, override the host paths:
 
@@ -122,13 +119,13 @@ TIMEZONE_ENV_FILE=.env TIMEZONE_DATA_DIR=./data docker compose up --build
 
 ```bash
 # View live container logs
-make docker.logs
+make logs
 
 # Restart after a configuration or image change
 make deploy
 
 # Stop the bot
-make docker.down
+make stop
 ```
 
 ## Technology Stack

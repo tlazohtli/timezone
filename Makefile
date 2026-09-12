@@ -4,31 +4,22 @@ include .env
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' .env)
 endif
 
-.PHONY: all clean build docker.build docker.up docker.down docker.logs deploy deploy.commands
 
-all: docker.up
+.PHONY: deploy logs stop commands
 
-# --- BOT CONTAINER ---
-
-clean:
-	rm -rf dist
-
-build: docker.build
-
-docker.build:
-	docker compose build
-
-docker.up:
+# Build (if needed) and run the bot. This is the only command needed to deploy.
+deploy:
 	docker compose up -d --build
 
-docker.down:
+# Stop and remove the bot container without deleting the host data directory.
+stop:
 	docker compose down
 
-docker.logs:
+# Follow the bot's recent output.
+logs:
 	docker compose logs --follow --tail=100
 
-deploy: docker.up
-
-deploy.commands:
+# Register Discord slash commands in a one-off container.
+commands:
 	@echo "📝 Registering Discord slash commands..."
 	docker compose run --rm bot bun run src/utils/deploy-commands.ts
