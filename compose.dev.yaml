@@ -1,0 +1,7 @@
+services:
+  bot:
+    environment:
+      NODE_ENV: development
+    command: bun --watch src/index.ts
+    volumes:
+      - ./src:/app/src:ro

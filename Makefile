@@ -5,7 +5,12 @@ export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' .env)
 endif
 
 
-.PHONY: deploy logs stop commands
+.PHONY: dev deploy logs stop commands
+
+# Run the bot locally with source watching. Requires an ignored .env file.
+dev:
+	mkdir -p data
+	TIMEZONE_ENV_FILE=.env TIMEZONE_DATA_DIR=./data docker compose -f compose.yaml -f compose.dev.yaml up --build
 
 # Build (if needed) and run the bot. This is the only command needed to deploy.
 deploy:
