@@ -10,7 +10,7 @@ Help your Discord community coordinate across timezones:
 - **`/time get user`** - Check what time it is for any user
 - **`/time get location`** - Check current time in any location
 - **`/time all`** - View everyone's local times grouped by timezone
-- **Auto-mention replies** - Bot automatically responds with time when users are mentioned (2-hour cooldown)
+- **Auto-mention replies** - Bot automatically responds with time when users are mentioned. For two hours after a reply, mentions of users within three UTC-offset hours are suppressed.
 
 ## Quick Start
 

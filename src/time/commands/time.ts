@@ -5,12 +5,34 @@ import { getTimezoneFromLocation } from '../services/geo.service';
 import { Command } from '../../types';
 
 const COOLDOWN_MS = 2 * 60 * 60 * 1000;
-const lastReplyTimes = new Map<string, number>();
+const TIMEZONE_COOLDOWN_OFFSET_MINUTES = 3 * 60;
+
+interface RecentMentionReply {
+    timestamp: number;
+    utcOffset: number;
+}
+
+const recentMentionReplies = new Map<string, RecentMentionReply>();
 
 const TIME_FORMAT_OPTIONS = { weekday: 'short' as const, hour: '2-digit' as const, minute: '2-digit' as const };
 
 const formatTime = (time: DateTime): string => {
     return time.toLocaleString(TIME_FORMAT_OPTIONS);
+};
+
+const hasRecentReplyForNearbyTimezone = (utcOffset: number, now: number): boolean => {
+    for (const [userId, reply] of recentMentionReplies) {
+        if ((now - reply.timestamp) >= COOLDOWN_MS) {
+            recentMentionReplies.delete(userId);
+            continue;
+        }
+
+        if (Math.abs(reply.utcOffset - utcOffset) <= TIMEZONE_COOLDOWN_OFFSET_MINUTES) {
+            return true;
+        }
+    }
+
+    return false;
 };
 
 export const timeCommand: Command = {
@@ -143,16 +165,14 @@ export const handleTimeMentions = async (message: Message) => {
     for (const [userId, user] of message.mentions.users) {
         if (user.bot) continue;
 
-        const lastSeen = lastReplyTimes.get(userId);
-        if (lastSeen && (now - lastSeen) < COOLDOWN_MS) continue;
-
         const data = await userTimezoneService.getSingleUser(userId);
         if (data) {
             const time = DateTime.now().setZone(data.timezone);
+            if (hasRecentReplyForNearbyTimezone(time.offset, now)) continue;
+
             const displayName = message.guild?.members.cache.get(userId)?.displayName ?? user.username;
             await message.channel.send(`It is **${formatTime(time)}** for ${displayName}.`);
-            lastReplyTimes.set(userId, now);
+            recentMentionReplies.set(userId, { timestamp: now, utcOffset: time.offset });
         }
     }
 };
-
